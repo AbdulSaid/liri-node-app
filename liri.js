@@ -8,16 +8,7 @@ var omdbkey = keys.Omdb.ApiKey;
 var spotifyKey = keys.spotify;
 var twitterKey = keys.twitter;
 
-//
 var action = process.argv[2];
-
-// var omdbAction = process.argv[2]
-// var twitterAction = process.argv[3];
-// var spotifyAction = process.argv[4];
-// var doWhatAction = process.argv[5];
-
-// var titleMovie = process.argv[3];
-// console.log(title);
 
 switch (action) {
   case 'my-tweets':
@@ -66,23 +57,39 @@ function spotify() {
   // The album that the song is from
   // If no song is provided then your program will default to "The Sign" by Ace of Base.
   //
-  var SpotifyWebApi = require('spotify-web-api-node');
-  var spotifyApi = new SpotifyWebApi({
-    clientId: 'fcecfc72172e4cd267473117a17cbd4d',
-    clientSecret: 'a6338157c9bb5ac9c71924cb2940e1a7'
-  });
-  var spotifySearch = process.argv[3];
-  console.log(spotifySearch);
+  var Spotify = require('node-spotify-api');
 
-  // Search tracks whose name, album or artist contains 'Love'
-  spotifyApi.searchTracks(spotifySearch).then(
-    function(data) {
-      console.log('Search by "Love"', data.body);
-    },
-    function(err) {
-      console.error(err);
+  var spotify = new Spotify({
+    id: process.env.SPOTIFY_ID,
+    secret: process.env.SPOTIFY_SECRET
+  });
+
+  var nodeArgs = process.argv;
+  var songName = '';
+
+  for (var i = 3; i < nodeArgs.length; i++) {
+    if (i > 2 && i < nodeArgs.length) {
+      songName = songName + '+' + nodeArgs[i];
+    } else {
+      songName += nodeArgs[i];
     }
-  );
+  }
+
+  spotify
+    .search({ type: 'track', query: songName, limit: 2 })
+    .then(function(response) {
+      console.log('Artists: ' + response.tracks.items[0].artists[0].name);
+      console.log('Name of Song: ' + response.tracks.items[0].name);
+      console.log(
+        'Song on Spotify: ' +
+          response.tracks.items[0].album.external_urls.spotify
+      );
+
+      console.log('Album: ' + response.tracks.items[0].album.name);
+    })
+    .catch(function(err) {
+      console.log(err);
+    });
 }
 
 function movieThis() {
@@ -90,7 +97,18 @@ function movieThis() {
   var request = require('request');
 
   // Grab the movieName which will always be the third node argument.
-  var movieName = process.argv[3];
+  var nodeArgs = process.argv;
+
+  var movieName = '';
+
+  for (var i = 3; i < nodeArgs.length; i++) {
+    if (i > 2 && i < nodeArgs.length) {
+      movieName = movieName + '+' + nodeArgs[i];
+    } else {
+      movieName += nodeArgs[i];
+    }
+  }
+
   console.log(movieName);
 
   // Then run a request to the OMDB API with the movie specified
@@ -101,12 +119,6 @@ function movieThis() {
     omdbkey +
     '';
 
-  // 'http://www.omdbapi.com/?t=' +
-  //     titleMovie +
-  //     '&y=&plot=short&apikey=' +
-  //     omdbkey +
-  //     '',
-
   request(queryUrl, function(error, response, body) {
     // If the request is successful
     if (!error && response.statusCode === 200) {
@@ -116,9 +128,9 @@ function movieThis() {
       console.log('Title of Movie: ' + JSON.parse(body).Title);
       console.log('Release Year: ' + JSON.parse(body).Year);
       console.log('IMDB Rating: ' + JSON.parse(body).imdbRating);
-      console.log(
-        'Rotten Tomatoes Rating: ' + JSON.parse(body).Ratings[1].Value
-      );
+      // console.log(
+      //   'Rotten Tomatoes Rating: ' + JSON.parse(body).Ratings[1].Value
+      // );
       console.log('Country Where Movie Produced: ' + JSON.parse(body).Country);
       console.log('Language of Movie: ' + JSON.parse(body).Language);
       console.log('Plot of Movie: ' + JSON.parse(body).Plot);
