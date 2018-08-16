@@ -8,24 +8,27 @@ var omdbkey = keys.Omdb.ApiKey;
 var spotifyKey = keys.spotify;
 var twitterKey = keys.twitter;
 
-var action = process.argv[2];
+// var commands = process.argv[2];
+action(process.argv[2], process.argv[3]);
 
-switch (action) {
-  case 'my-tweets':
-    tweets();
-    break;
+function action(commands, input) {
+  switch (commands) {
+    case 'my-tweets':
+      tweets();
+      break;
 
-  case 'spotify-this-song':
-    spotify();
-    break;
+    case 'spotify-this-song':
+      spotify();
+      break;
 
-  case 'movie-this':
-    movieThis();
-    break;
+    case 'movie-this':
+      movieThis();
+      break;
 
-  case 'do-what-it-says':
-    doWhat();
-    break;
+    case 'do-what-it-says':
+      doWhat();
+      break;
+  }
 }
 
 function tweets() {
@@ -51,12 +54,8 @@ function tweets() {
 }
 
 function spotify() {
-  //Artist(s)
-  // The song's name
-  // A preview link of the song from Spotify
-  // The album that the song is from
   // If no song is provided then your program will default to "The Sign" by Ace of Base.
-  //
+
   var Spotify = require('node-spotify-api');
 
   var spotify = new Spotify({
@@ -76,7 +75,7 @@ function spotify() {
   }
 
   spotify
-    .search({ type: 'track', query: songName, limit: 2 })
+    .search({ type: 'track', query: songName, limit: 1 })
     .then(function(response) {
       console.log('Artists: ' + response.tracks.items[0].artists[0].name);
       console.log('Name of Song: ' + response.tracks.items[0].name);
@@ -96,7 +95,6 @@ function movieThis() {
   // If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
   var request = require('request');
 
-  // Grab the movieName which will always be the third node argument.
   var nodeArgs = process.argv;
 
   var movieName = '';
@@ -111,7 +109,6 @@ function movieThis() {
 
   console.log(movieName);
 
-  // Then run a request to the OMDB API with the movie specified
   var queryUrl =
     'http://www.omdbapi.com/?t=' +
     movieName +
@@ -120,11 +117,7 @@ function movieThis() {
     '';
 
   request(queryUrl, function(error, response, body) {
-    // If the request is successful
     if (!error && response.statusCode === 200) {
-      // Parse the body of the site and recover just the imdbRating
-      // (Note: The syntax below for parsing isn't obvious. Just spend a few moments dissecting it).
-      // console.log(body);
       console.log('Title of Movie: ' + JSON.parse(body).Title);
       console.log('Release Year: ' + JSON.parse(body).Year);
       console.log('IMDB Rating: ' + JSON.parse(body).imdbRating);
@@ -142,20 +135,17 @@ function movieThis() {
 function doWhat() {
   // Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
   // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt
+  var fs = require('fs');
+
+  fs.readFile('random.txt', 'utf8', function(err, data) {
+    if (err) {
+      return console.log(err);
+    }
+    var output = data.split(',');
+    var commands = output[0];
+    var input = output[1];
+    console.log(commands);
+    console.log(input);
+    // action(commands, input);
+  });
 }
-
-// request(
-//   'http://www.omdbapi.com/?t=' +
-//     titleMovie +
-//     '&y=&plot=short&apikey=' +
-//     omdbkey +
-//     '',
-
-//   function(error, response, body) {
-//     // If the request is successful (i.e. if the response status code is 200)
-//     if (!error && response.statusCode === 200) {
-//       // Parse the body of the site and recover just the imdbRating
-//       // (Note: The syntax below for parsing isn't obvious. Just spend a few moments dissecting it).
-//       console.log("The movie's rating is: " + JSON.parse(body).imdbRating);
-//     }
-//   }
