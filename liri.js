@@ -1,38 +1,38 @@
 require('dotenv').config();
 
 var request = require('request');
-var keys = require('./keys.js');
+var Twitter = require('twitter');
+var Spotify = require('node-spotify-api');
 var fs = require('fs');
+var keys = require('./keys.js');
 
 var omdbkey = keys.Omdb.ApiKey;
 var spotifyKey = keys.spotify;
 var twitterKey = keys.twitter;
 
-// var commands = process.argv[2];
-action(process.argv[2], process.argv[3]);
+var commandline = process.argv;
+var action = commandline[2];
+var inputs = commandline[3];
 
-function action(commands, input) {
-  switch (commands) {
-    case 'my-tweets':
-      tweets();
-      break;
+switch (action) {
+  case 'my-tweets':
+    tweets(inputs);
+    break;
 
-    case 'spotify-this-song':
-      spotify();
-      break;
+  case 'spotify-this-song':
+    spotify(inputs);
+    break;
 
-    case 'movie-this':
-      movieThis();
-      break;
+  case 'movie-this':
+    movieThis(inputs);
+    break;
 
-    case 'do-what-it-says':
-      doWhat();
-      break;
-  }
+  case 'do-what-it-says':
+    doWhat();
+    break;
 }
 
-function tweets() {
-  var Twitter = require('twitter');
+function tweets(inputs) {
   var client = new Twitter({
     consumer_key: process.env.TWITTER_CONSUMER_KEY,
     consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
@@ -40,42 +40,45 @@ function tweets() {
     access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
   });
 
-  client.get(
-    'statuses/user_timeline',
-    { screen_name: 'JohnDoe57866453', count: 20 },
-    function(error, tweets, response) {
-      if (error) throw error;
-      for (var i = 0; i < tweets.length; i++) {
-        console.log('Time Tweet was created: ' + tweets[i].created_at);
-        console.log('Tweet: ' + tweets[i].text);
-      }
+  var params = { screen_name: inputs, count: 20 };
+
+  client.get('statuses/user_timeline', params, function(
+    error,
+    tweets,
+    response
+  ) {
+    if (error) throw error;
+    for (var i = 0; i < tweets.length; i++) {
+      console.log('Time Tweet was created: ' + tweets[i].created_at);
+      console.log('Tweet: ' + tweets[i].text);
     }
-  );
+  });
 }
 
-function spotify() {
+function spotify(inputs) {
   // If no song is provided then your program will default to "The Sign" by Ace of Base.
-
-  var Spotify = require('node-spotify-api');
 
   var spotify = new Spotify({
     id: process.env.SPOTIFY_ID,
     secret: process.env.SPOTIFY_SECRET
   });
-
-  var nodeArgs = process.argv;
-  var songName = '';
-
-  for (var i = 3; i < nodeArgs.length; i++) {
-    if (i > 2 && i < nodeArgs.length) {
-      songName = songName + '+' + nodeArgs[i];
+  var output = '';
+  for (var i = 3; i < commandline.length; i++) {
+    if (i > 2 && i < commandline.length) {
+      output += commandline[i] + '+';
     } else {
-      songName += nodeArgs[i];
+      output += commandline[i];
     }
   }
 
+  console.log('with the for: ' + output.slice(0, -1));
+  if (!inputs) {
+    inputs = 'The Sign';
+    console.log('WHen their is no song :' + inputs);
+  }
+
   spotify
-    .search({ type: 'track', query: songName, limit: 1 })
+    .search({ type: 'track', query: inputs, limit: 1 })
     .then(function(response) {
       console.log('Artists: ' + response.tracks.items[0].artists[0].name);
       console.log('Name of Song: ' + response.tracks.items[0].name);
@@ -91,39 +94,38 @@ function spotify() {
     });
 }
 
-function movieThis() {
-  // If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
-  var request = require('request');
-
-  var nodeArgs = process.argv;
-
-  var movieName = '';
-
-  for (var i = 3; i < nodeArgs.length; i++) {
-    if (i > 2 && i < nodeArgs.length) {
-      movieName = movieName + '+' + nodeArgs[i];
+function movieThis(inputs) {
+  var output = '';
+  for (var i = 3; i < commandline.length; i++) {
+    if (i > 2 && i < commandline.length) {
+      output += commandline[i] + '+';
     } else {
-      movieName += nodeArgs[i];
+      output += commandline[i];
     }
   }
-
-  console.log(movieName);
+  console.log(output);
+  // console.log(movieName);
 
   var queryUrl =
     'http://www.omdbapi.com/?t=' +
-    movieName +
+    output +
     '&y=&plot=short&apikey=' +
     omdbkey +
     '';
+  console.log('this is inputs in query: ' + output);
 
   request(queryUrl, function(error, response, body) {
+    if (!inputs) {
+      inputs = 'Mr. Nobody';
+    }
     if (!error && response.statusCode === 200) {
       console.log('Title of Movie: ' + JSON.parse(body).Title);
       console.log('Release Year: ' + JSON.parse(body).Year);
       console.log('IMDB Rating: ' + JSON.parse(body).imdbRating);
-      // console.log(
-      //   'Rotten Tomatoes Rating: ' + JSON.parse(body).Ratings[1].Value
-      // );
+      // some movies don't have rotten Tomates Rating
+      console.log(
+        'Rotten Tomatoes Rating: ' + JSON.parse(body).Ratings[1].Value
+      );
       console.log('Country Where Movie Produced: ' + JSON.parse(body).Country);
       console.log('Language of Movie: ' + JSON.parse(body).Language);
       console.log('Plot of Movie: ' + JSON.parse(body).Plot);
@@ -132,7 +134,7 @@ function movieThis() {
   });
 }
 
-function doWhat() {
+function doWhat(input) {
   // Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
   // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt
   var fs = require('fs');
@@ -142,10 +144,19 @@ function doWhat() {
       return console.log(err);
     }
     var output = data.split(',');
-    var commands = output[0];
-    var input = output[1];
-    console.log(commands);
-    console.log(input);
-    // action(commands, input);
+    console.log(output);
+
+    if (output[0] === 'spotify-this-song') {
+      var songcheck = output[1].slice(1, -1);
+      console.log(songcheck);
+      spotify(songcheck);
+    } else if (output[0] === 'my-tweets') {
+      var tweetname = output[1].slice(1, -1);
+      twitter(tweetname);
+    } else if (output[0] === 'movie-this') {
+      var movie_name = output[1].slice(1, -1);
+      console.log('THIS', movie_name);
+      movieThis(movie_name);
+    }
   });
 }
