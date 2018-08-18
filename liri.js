@@ -7,24 +7,30 @@ var fs = require('fs');
 var keys = require('./keys.js');
 
 var omdbkey = keys.Omdb.ApiKey;
-var spotifyKey = keys.spotify;
-var twitterKey = keys.twitter;
 
 var commandline = process.argv;
 var action = commandline[2];
-var inputs = commandline[3];
+
+var output = '';
+for (var i = 3; i < commandline.length; i++) {
+  if (i > 2 && i < commandline.length) {
+    output += commandline[i] + '+';
+  } else {
+    output += commandline[i];
+  }
+}
 
 switch (action) {
   case 'my-tweets':
-    tweets(inputs);
+    tweets(output);
     break;
 
   case 'spotify-this-song':
-    spotify(inputs);
+    spotify(output);
     break;
 
   case 'movie-this':
-    movieThis(inputs);
+    movieThis(output);
     break;
 
   case 'do-what-it-says':
@@ -32,7 +38,7 @@ switch (action) {
     break;
 }
 
-function tweets(inputs) {
+function tweets(output) {
   var client = new Twitter({
     consumer_key: process.env.TWITTER_CONSUMER_KEY,
     consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
@@ -40,14 +46,11 @@ function tweets(inputs) {
     access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
   });
 
-  var params = { screen_name: inputs, count: 20 };
+  var params = { screen_name: output, count: 20 };
+  console.log('output', output);
 
-  client.get('statuses/user_timeline', params, function(
-    error,
-    tweets,
-    response
-  ) {
-    if (error) throw error;
+  client.get('statuses/user_timeline', params, function(error, tweets) {
+    if (error) console.log(error);
     for (var i = 0; i < tweets.length; i++) {
       console.log('Time Tweet was created: ' + tweets[i].created_at);
       console.log('Tweet: ' + tweets[i].text);
@@ -55,26 +58,17 @@ function tweets(inputs) {
   });
 }
 
-function spotify(inputs) {
+function spotify(output) {
   // If no song is provided then your program will default to "The Sign" by Ace of Base.
 
   var spotify = new Spotify({
     id: process.env.SPOTIFY_ID,
     secret: process.env.SPOTIFY_SECRET
   });
-  var output = '';
-  for (var i = 3; i < commandline.length; i++) {
-    if (i > 2 && i < commandline.length) {
-      output += commandline[i] + '+';
-    } else {
-      output += commandline[i];
-    }
-  }
 
   console.log('with the for: ' + output.slice(0, -1));
-  if (!inputs) {
-    inputs = 'The Sign';
-    console.log('WHen their is no song :' + inputs);
+  if (!output) {
+    output = 'The Sign';
   }
 
   spotify
@@ -94,29 +88,17 @@ function spotify(inputs) {
     });
 }
 
-function movieThis(inputs) {
-  var output = '';
-  for (var i = 3; i < commandline.length; i++) {
-    if (i > 2 && i < commandline.length) {
-      output += commandline[i] + '+';
-    } else {
-      output += commandline[i];
-    }
-  }
-  console.log(output);
-  // console.log(movieName);
-
+function movieThis(output) {
   var queryUrl =
     'http://www.omdbapi.com/?t=' +
     output +
     '&y=&plot=short&apikey=' +
     omdbkey +
     '';
-  console.log('this is inputs in query: ' + output);
 
   request(queryUrl, function(error, response, body) {
-    if (!inputs) {
-      inputs = 'Mr. Nobody';
+    if (!output) {
+      output = 'Mr. Nobody';
     }
     if (!error && response.statusCode === 200) {
       console.log('Title of Movie: ' + JSON.parse(body).Title);
@@ -134,7 +116,7 @@ function movieThis(inputs) {
   });
 }
 
-function doWhat(input) {
+function doWhat() {
   // Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
   // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt
   var fs = require('fs');
