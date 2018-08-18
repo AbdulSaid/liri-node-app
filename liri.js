@@ -78,7 +78,7 @@ function spotify(inputs) {
   }
 
   spotify
-    .search({ type: 'track', query: inputs, limit: 1 })
+    .search({ type: 'track', query: output, limit: 1 })
     .then(function(response) {
       console.log('Artists: ' + response.tracks.items[0].artists[0].name);
       console.log('Name of Song: ' + response.tracks.items[0].name);
@@ -144,11 +144,11 @@ function doWhat(input) {
       return console.log(err);
     }
     var output = data.split(',');
-    console.log(output);
+    console.log('output:', output);
 
     if (output[0] === 'spotify-this-song') {
       var songcheck = output[1].slice(1, -1);
-      console.log(songcheck);
+      console.log('songCheck:', songcheck);
       spotify(songcheck);
     } else if (output[0] === 'my-tweets') {
       var tweetname = output[1].slice(1, -1);
