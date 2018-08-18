@@ -3,11 +3,8 @@ require('dotenv').config();
 var request = require('request');
 var Twitter = require('twitter');
 var Spotify = require('node-spotify-api');
-var fs = require('fs');
 var keys = require('./keys.js');
-
 var omdbkey = keys.Omdb.ApiKey;
-
 var commandline = process.argv;
 var action = commandline[2];
 
@@ -46,11 +43,11 @@ function tweets(output) {
     access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
   });
 
+  var output = process.argv[3];
   var params = { screen_name: output, count: 20 };
-  console.log('output', output);
 
   client.get('statuses/user_timeline', params, function(error, tweets) {
-    if (error) console.log(error);
+    if (error) console.log('this is the error', error);
     for (var i = 0; i < tweets.length; i++) {
       console.log('Time Tweet was created: ' + tweets[i].created_at);
       console.log('Tweet: ' + tweets[i].text);
@@ -59,8 +56,6 @@ function tweets(output) {
 }
 
 function spotify(output) {
-  // If no song is provided then your program will default to "The Sign" by Ace of Base.
-
   var spotify = new Spotify({
     id: process.env.SPOTIFY_ID,
     secret: process.env.SPOTIFY_SECRET
@@ -117,8 +112,6 @@ function movieThis(output) {
 }
 
 function doWhat() {
-  // Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
-  // It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt
   var fs = require('fs');
 
   fs.readFile('random.txt', 'utf8', function(err, data) {
